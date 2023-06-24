@@ -1,0 +1,86 @@
+buildscript {
+    dependencies {
+        repositories {
+            maven {
+                url "https://plugins.gradle.org/m2/"
+            }
+        }
+        classpath("net.serenity-bdd:serenity-gradle-plugin:3.6.7")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: "net.serenity-bdd.serenity-gradle-plugin"
+
+allprojects {
+    group 'com.vertafore'
+    version '1.0.0-SNAPSHOT'
+
+    apply plugin: 'java-library'
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        implementation files('/lib/mssql-jdbc-9.2.1.jre8.jar')
+    }
+
+    task sourceJar(type: Jar, dependsOn: classes) {
+        archiveClassifier.set('sources')
+        from sourceSets.main.allSource
+    }
+}
+
+dependencies {
+
+    // Serenity
+    api "net.serenity-bdd:serenity-core:3.5.1"
+    api "net.serenity-bdd:serenity-cucumber:3.5.1"
+    api "net.serenity-bdd:serenity-rest-assured:3.5.1"
+    // Selenium
+    implementation 'org.seleniumhq.selenium:selenium-java:4.8.1'
+    implementation 'org.seleniumhq.selenium:selenium-http-jdk-client:4.8.1'
+    // Jackson
+    api 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2'
+    // Apache Collections
+    api 'org.apache.poi:poi:5.2.3'
+    api 'org.apache.poi:poi-ooxml:5.2.3'
+    // SLF4J
+    api 'org.apache.logging.log4j:log4j-to-slf4j:2.20.0'
+    api 'org.apache.logging.log4j:log4j-iostreams:2.20.0'
+    api 'ch.qos.logback:logback-classic:1.4.5'
+    api 'ch.qos.logback:logback-core:1.4.5'
+
+    api 'com.google.googlejavaformat:google-java-format:1.16.0'
+    implementation 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+    implementation 'org.junit.vintage:junit-vintage-engine:5.9.2'
+    implementation 'org.awaitility:awaitility:4.2.0'
+    api "com.github.invictum:serenity-reportportal-integration:1.5.8"
+}
+
+tasks.withType(Test) {
+
+    jvmArgs = ['-Xms1024m', '-Xmx1024m']
+
+    testLogging {
+        outputs.upToDateWhen {false}
+        showStandardStreams = true
+    }
+
+    systemProperty 'webdriver.http.factory', 'jdk-http-client'
+
+    if(System.getProperty('cucumber.filter.tags') != null) {
+        systemProperty 'cucumber.filter.tags', System.getProperty('cucumber.filter.tags')
+    }
+
+    if(System.getProperty('serenity.take.screenshots') != null) {
+        systemProperty 'serenity.take.screenshots', System.getProperty('serenity.take.screenshots')
+    }
+
+    if(System.getProperty('withSerenityReporting') != null) {
+        test.finalizedBy(aggregate)
+    }
+}
